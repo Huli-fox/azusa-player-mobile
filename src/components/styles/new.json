@@ -8,20 +8,13 @@
       "darkTheme": true
     },
     "gifs": [
-      ""
+      "https://s2.loli.net/2024/09/29/P8HdmTVKnBDaSWM.png"
     ],
     "backgroundImages": [
-      {
-        "type": "bvid",
-        "identifier": "BV15N411f7HP"
-      }
+      "https://s2.loli.net/2024/09/29/P8HdmTVKnBDaSWM.png"
     ],
     "backgroundImagesLandscape": [
-      {
-        "type": "bvid",
-        "identifier": "BV15e411u7T9"
-      },
-      "https://img.nga.178.com/attachments/mon_202309/22/-zue37Q18w-baydXmZ67.jpeg"
+      "https://s2.loli.net/2024/09/29/P8HdmTVKnBDaSWM.png"
     ],
     "customColors": {
       "maskedBackgroundColor": "rgba(0, 0, 0, 0.30)",
