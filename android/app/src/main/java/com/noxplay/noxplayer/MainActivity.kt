@@ -7,29 +7,63 @@ import android.app.PictureInPictureParams
 import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.Debug
 import android.os.SystemClock
 import android.util.Rational
+import com.facebook.infer.annotation.Assertions
+import android.view.View
+import android.view.ViewTreeObserver
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.ReactApplication
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.ReactContext
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.bridgelessEnabled
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-import com.facebook.react.bridge.Arguments
 import expo.modules.ReactActivityDelegateWrapper
 import timber.log.Timber
 
-class MainActivity : ReactActivity(), ComponentCallbacks2 {
+interface NoxActivity {
+    var loadedRN: Boolean
+}
+
+class MainActivity(override var loadedRN: Boolean = false) :
+    ReactActivity(), ComponentCallbacks2, NoxActivity {
+
+
+    fun emit (tag: String, data: Bundle) {
+        getReactContext()?.emitDeviceEvent(tag, Arguments.fromBundle(data))
+    }
+    private lateinit var volumeListener: APMVolumeListener
     /**
      * for react navigation;
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(null)
-        if ("trackplayer://service-bound" in intent.data.toString()) {
-            moveTaskToBack(true)
-        }
+        volumeListener = APMVolumeListener(::emit)
+        registerReceiver(volumeListener, IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
+
+        val content: View = findViewById(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(
+            object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    // Check whether the initial data is ready.
+                    return if (loadedRN) {
+                        // The content is ready. Start drawing.
+                        content.viewTreeObserver.removeOnPreDrawListener(this)
+                        true
+                    } else {
+                        // The content isn't ready. Suspend.
+                        false
+                    }
+                }
+            }
+        )
     }
 
     @SuppressLint("VisibleForTests")
@@ -37,15 +71,13 @@ class MainActivity : ReactActivity(), ComponentCallbacks2 {
         super.onNewIntent(intent)
         try {
             if (intent.action?.contains("android.media.action.MEDIA_PLAY_FROM_SEARCH") == true) {
-                this.reactInstanceManager.currentReactContext
-                    ?.emitDeviceEvent("remote-play-search", Arguments.fromBundle(intent.extras ?: Bundle()))
+                getReactContext()?.emitDeviceEvent("remote-play-search", Arguments.fromBundle(intent.extras ?: Bundle()))
             }
             val launchOptions = Bundle()
             launchOptions.putString("intentData", intent.dataString)
             launchOptions.putString("intentAction", intent.action)
             launchOptions.putBundle("intentBundle", intent.extras ?: Bundle())
-            this.reactInstanceManager.currentReactContext
-                ?.emitDeviceEvent("APMNewIntent", Arguments.fromBundle(launchOptions))
+            getReactContext()?.emitDeviceEvent("APMNewIntent", Arguments.fromBundle(launchOptions))
         } catch (e: Exception) {
             Timber.tag("APM-intent").d("failed to notify intent: $intent")
         }
@@ -111,14 +143,12 @@ class MainActivity : ReactActivity(), ComponentCallbacks2 {
         }
         if (isInPictureInPictureMode) {
             // Hide the full-screen UI (controls, etc.) while in PiP mode.
-            this.reactInstanceManager.currentReactContext
-                ?.emitDeviceEvent("APMEnterPIP", true)
+            getReactContext()?.emitDeviceEvent("APMEnterPIP", true)
             // HACK: a really stupid way to continue RN UI rendering
             onResume()
         } else {
             // Restore the full-screen UI.
-            reactInstanceManager.currentReactContext
-                ?.emitDeviceEvent("APMEnterPIP", false)
+            getReactContext()?.emitDeviceEvent("APMEnterPIP", false)
         }
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
     }
@@ -144,6 +174,7 @@ class MainActivity : ReactActivity(), ComponentCallbacks2 {
     }
 
     override fun onDestroy() {
+        unregisterReceiver(volumeListener)
         // https://stackoverflow.com/questions/5764099/how-to-update-a-widget-if-the-related-service-gets-killed
         val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(this, APMWidget::class.java)
@@ -154,5 +185,17 @@ class MainActivity : ReactActivity(), ComponentCallbacks2 {
             PendingIntent.getBroadcast(this, 5424, intent, PendingIntent.FLAG_IMMUTABLE)
         )
         super.onDestroy()
+    }
+
+    @SuppressLint("VisibleForTests")
+    fun getReactContext(): ReactContext? {
+
+        if (bridgelessEnabled) {
+            val reactApplication = this.application as ReactApplication
+            val reactHost = reactApplication.reactHost
+            Assertions.assertNotNull(reactHost, "React host is null in newArchitecture")
+            return reactHost?.currentReactContext
+        }
+        return reactInstanceManager.currentReactContext
     }
 }

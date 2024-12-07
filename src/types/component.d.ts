@@ -1,21 +1,39 @@
 import { StyleProp, ViewStyle } from 'react-native';
 import { ParamListBase } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Track } from 'react-native-track-player';
+
+import { SharedValue } from 'react-native-reanimated';
 
 import { IntentData } from '@enums/Intent';
 
 declare global {
   namespace NoxComponent {
+    interface OpacityProps {
+      opacity: SharedValue<number>;
+      style?: StyleProp<ViewStyle>;
+    }
+    interface MiniplayerProps {
+      miniplayerHeight: SharedValue<number>;
+    }
     interface AppProps {
       intentData?: IntentData;
       intentAction: string;
       intentBundle: null | any;
       rootTag: number;
     }
+    interface SetupPlayerProps extends AppProps {
+      vip?: boolean;
+    }
     interface NavigationProps {
       navigation: DrawerNavigationProp<ParamListBase>;
     }
+
+    interface StackNavigationProps {
+      navigation: NativeStackNavigationProp<ParamListBase>;
+    }
+
     interface NavigationProps2 {
       navigation?: DrawerNavigationProp<ParamListBase>;
     }

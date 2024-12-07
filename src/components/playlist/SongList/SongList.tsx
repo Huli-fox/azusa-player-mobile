@@ -20,9 +20,7 @@ const PlaylistList = () => {
   const currentPlayingId = useNoxSetting(state => state.currentPlayingId);
   const playerStyle = useNoxSetting(state => state.playerStyle);
   const currentPlaylist = useNoxSetting(state => state.currentPlaylist);
-  const songListScrollCounter = useNoxSetting(
-    state => state.songListScrollCounter,
-  );
+  const songListScrollCounter = useNoxSetting(s => s.songListScrollCounter);
   const usedPlaylist = usePlaylist(currentPlaylist);
   const {
     refreshPlaylist,
@@ -59,6 +57,10 @@ const PlaylistList = () => {
     }, [checking, setChecking, searching, setSearching]),
   );
 
+  const btnContainColor =
+    playerStyle.colors.primaryContainer ??
+    playerStyle.customColors.playlistDrawerBackgroundColor;
+
   return (
     <View style={stylesLocal.mainContainer}>
       <View style={[styles.topBarContainer, { top: 10 }]}>
@@ -69,28 +71,23 @@ const PlaylistList = () => {
               icon="select-all"
               onPress={toggleSelectedAll}
               size={25}
+              //iconColor={playerStyle.colors.primary}
             />
           )}
           <IconButton
             icon="select"
             onPress={() => setChecking(val => !val)}
             size={25}
-            containerColor={
-              checking
-                ? playerStyle.customColors.playlistDrawerBackgroundColor
-                : undefined
-            }
+            containerColor={checking ? btnContainColor : undefined}
+            //iconColor={playerStyle.colors.primary}
           />
           <IconButton
             icon="magnify"
             onPress={() => setSearching(val => !val)}
             size={25}
             mode={searching ? 'contained' : undefined}
-            containerColor={
-              searching
-                ? playerStyle.customColors.playlistDrawerBackgroundColor
-                : undefined
-            }
+            containerColor={searching ? btnContainColor : undefined}
+            //iconColor={playerStyle.colors.primary}
           />
           <PlaylistMenuButton
             disabled={checking}

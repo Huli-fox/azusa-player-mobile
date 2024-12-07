@@ -3,7 +3,6 @@ import TrackPlayer, {
   useTrackPlayerEvents,
   Event,
   State,
-  useActiveTrack,
 } from 'react-native-track-player';
 
 import { useNoxSetting } from '@stores/useApp';
@@ -20,6 +19,7 @@ import { NoxRepeatMode } from '@enums/RepeatMode';
 import usePlaylistCRUD from '@hooks/usePlaylistCRUD';
 import { getR128Gain } from '@utils/ffmpeg/r128Store';
 import { isAndroid } from '@utils/RNUtils';
+import { useTrackStore } from '@hooks/useActiveTrack';
 
 const { getState } = noxPlayingList;
 const { fadeIntervalMs, fadeIntervalSec } = appStore.getState();
@@ -32,8 +32,8 @@ export default () => {
   const [crossfadingId, setCrossfadingId] = React.useState('');
   const { updateCurrentSongMetadata, updateCurrentSongMetadataReceived } =
     usePlaylistCRUD();
-  const track = useActiveTrack();
-  const updateTrack = useNoxSetting(state => state.updateTrack);
+  const track = useTrackStore(state => state.track);
+  const updateTrack = useTrackStore(state => state.updateTrack);
   const crossfadeId = useNoxSetting(state => state.crossfadeId);
   const setCrossfadeId = useNoxSetting(state => state.setCrossfadeId);
   const crossfadeInterval = useNoxSetting(
@@ -67,7 +67,7 @@ export default () => {
   });
 
   useTrackPlayerEvents([Event.PlaybackProgressUpdated], async event => {
-    const playmode = getState().playmode;
+    const { playmode } = getState();
     saveLastPlayDuration(event.position);
     const currentSongId = track?.song?.id ?? '';
     // prepare for cross fading if enabled, playback is > 50% done and crossfade preparation isnt done
@@ -76,7 +76,9 @@ export default () => {
       event.position > event.duration * 0.5 &&
       crossfadeId !== currentSongId
     ) {
-      logger.debug('[crossfade] preparing crossfade');
+      logger.debug(
+        `[crossfade] preparing crossfade at ${event.position}/${event.duration}`,
+      );
       await prepareSkipToNext();
       setCrossfadeId(track?.song?.id ?? '');
       return TrackPlayer.crossFadePrepare();
@@ -89,6 +91,7 @@ export default () => {
         logger.warn(
           `[crossfade] true duration is 0?! reset to ${event.duration} instead. ${bRepeatDuration}, ${abRepeat}.`,
         );
+        setBRepeatDuration(event.duration * abRepeat[1]);
         trueDuration = event.duration;
       }
       if (
@@ -143,7 +146,25 @@ export default () => {
         break;
     }
     if (event.state !== State.Ready) return;
-    updateCurrentSongMetadata();
+    updateCurrentSongMetadata().then(v => {
+      if (v) {
+        updateTrack({
+          ...v,
+          artwork: v.cover,
+          title: v.name,
+          artist: v.singer,
+        });
+      }
+    });
+    const { playmode, currentPlayingId } = getState();
+    if (!loadingTracker.current || playmode !== NoxRepeatMode.RepeatTrack) {
+      return;
+    }
+    const newABRepeat = getABRepeatRaw(currentPlayingId);
+    if (newABRepeat[0] === 0) return;
+    loadingTracker.current = false;
+    const trackDuration = (await TrackPlayer.getProgress()).duration;
+    TrackPlayer.seekTo(trackDuration * newABRepeat[0]);
   });
 
   useTrackPlayerEvents([Event.PlaybackActiveTrackChanged], async event => {
