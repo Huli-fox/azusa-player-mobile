@@ -10,6 +10,24 @@ interface Props {
 const ShadowedElement = ({ children, style, distance = 8 }: Props) => {
   if (style?.backgroundColor) {
     const color = colord(String(style.backgroundColor));
+    // TODO: boxShadow looks like shit
+    /*
+    if (isAndroid) {
+      return (
+        <View
+          style={{
+            width: style.width,
+            height: style.height,
+            borderRadius: style.width! / 2,
+            backgroundColor: style.backgroundColor,
+            boxShadow: `0 0 0 ${distance} ${shadowColor}`,
+          }}
+        >
+          {children}
+        </View>
+      );
+    }
+    */
     return (
       <Shadow
         distance={distance}
