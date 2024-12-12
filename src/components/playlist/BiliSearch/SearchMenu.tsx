@@ -52,17 +52,17 @@ export default ({
   return (
     <Menu visible={visible} onDismiss={toggleVisible} anchor={menuCoords}>
       <Menu.Item
-        leadingIcon={Icons.BILIBILI}
+        leadingIcon={() => Icons.BILIBILI()}
         onPress={() => setDefaultSearch(SearchOptions.BILIBILI)}
         title={'Bilibili'}
       />
       <Menu.Item
-        leadingIcon={Icons.YOUTUBEM}
+        leadingIcon={() => Icons.YOUTUBEM()}
         onPress={() => setDefaultSearch(SearchOptions.YOUTUBEM)}
         title={'YT Music'}
       />
       <Menu.Item
-        leadingIcon={Icons.YOUTUBE}
+        leadingIcon={() => Icons.YOUTUBE()}
         onPress={() => setDefaultSearch(SearchOptions.YOUTUBE)}
         title={'Youtube'}
       />
@@ -80,7 +80,14 @@ export default ({
       )}
       {isAndroid && (
         <Menu.Item
-          leadingIcon={() => Icons.LOCAL(rgb2Hex(playerStyle.colors.primary))}
+          leadingIcon={() =>
+            Icons.LOCAL(
+              rgb2Hex(
+                playerStyle.colors.onSurfaceVariant ??
+                  playerStyle.colors.primary,
+              ),
+            )
+          }
           onPress={chooseLocalFolderAndroid}
           title={t('Menu.local')}
         />

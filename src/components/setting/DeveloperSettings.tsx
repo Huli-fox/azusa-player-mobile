@@ -10,14 +10,10 @@ import * as Sentry from '@sentry/react-native';
 import { APPSTORE } from '@env';
 import { useNoxSetting } from '@stores/useApp';
 import { logStore, LOGLEVEL } from '@utils/Logger';
-import GenericSelectDialog from '../dialogs/GenericSelectDialog';
-import { SettingListItem, RenderSetting } from './useRenderSetting';
+import { RenderSetting } from './helpers/RenderSetting';
+import SettingListItem from './helpers/SettingListItem';
 import useVersionCheck from '@hooks/useVersionCheck';
-import {
-  SelectSettingEntry,
-  SettingEntry,
-  dummySelectSettingEntry,
-} from './SetttingEntries';
+import { SelectSettingEntry, SettingEntry } from './helpers/SettingEntry';
 import NoxCache from '@utils/Cache';
 import useCleanCache from '@hooks/useCleanCache';
 import appStore from '@stores/appStore';
@@ -32,6 +28,10 @@ import {
   enableTanaka,
 } from '@hooks/useTanakaAmazingCommodities';
 import { isAndroid } from '@utils/RNUtils';
+import SelectSetting from './helpers/SelectSetting';
+import SelectDialogWrapper, {
+  SelectDialogChildren,
+} from './SelectDialogWrapper';
 
 enum Icons {
   setlog = 'console',
@@ -44,6 +44,7 @@ enum Icons {
   fade = 'cosine-wave',
   plugins = 'puzzle',
   Tanaka = 'emoticon-devil',
+  ArtworkRes = 'quality-high',
 }
 
 enum VIEW {
@@ -55,6 +56,7 @@ const Stack = createNativeStackNavigator();
 
 const FadeOptions = [0, 250, 500, 1000];
 const CrossFadeOptions = [0, 2500, 5000, 7500, 12000];
+const ArtworkResOptions = [0, 240, 360, 480, 720, 1080];
 
 const developerSettings: { [key: string]: SettingEntry } = {
   noInterruption: {
@@ -83,6 +85,10 @@ const developerSettings: { [key: string]: SettingEntry } = {
     settingCategory: 'GeneralSettings',
     callback: Sentry.nativeCrash,
   },
+  artworkCarousel: {
+    settingName: 'artworkCarousel',
+    settingCategory: 'GeneralSettings',
+  },
   /**
   chatGPTSongName: {
     settingName: 'chatGPTResolveSongName',
@@ -93,16 +99,18 @@ const developerSettings: { [key: string]: SettingEntry } = {
 
 const { getState, setState } = logStore;
 
-const Home = ({ navigation }: NoxComponent.NavigationProps) => {
+interface HomeProps
+  extends NoxComponent.StackNavigationProps,
+    SelectDialogChildren<any> {}
+
+const Home = ({
+  navigation,
+  setCurrentSelectOption,
+  setSelectVisible,
+}: HomeProps) => {
   const playerSetting = useNoxSetting(state => state.playerSetting);
   const setPlayerSetting = useNoxSetting(state => state.setPlayerSetting);
   const { t } = useTranslation();
-  const [currentSelectOption, setCurrentSelectOption] = React.useState<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    SelectSettingEntry<any>
-  >(dummySelectSettingEntry);
-  const [selectVisible, setSelectVisible] = React.useState(false);
-  const playerStyle = useNoxSetting(state => state.playerStyle);
   const { checkVersion } = useVersionCheck();
   const { orphanedCache, cleanOrphanedCache } = useCleanCache();
   const fadeIntervalMs = useStore(appStore, state => state.fadeIntervalMs);
@@ -196,144 +204,148 @@ const Home = ({ navigation }: NoxComponent.NavigationProps) => {
   };
 
   return (
-    <View
-      style={{
+    <ScrollView>
+      <List.Section>
+        <GroupView>
+          <View>
+            <RenderSetting item={developerSettings.noInterruption} />
+            <RenderSetting item={developerSettings.prefetchTrack} />
+            {isAndroid && (
+              <>
+                <RenderSetting item={developerSettings.audioOffload} />
+                <RenderSetting item={developerSettings.skipSilence} />
+                <RenderSetting item={developerSettings.parseEmbeddedArtwork} />
+              </>
+            )}
+            <RenderSetting item={developerSettings.artworkCarousel} />
+            <RenderSetting item={developerSettings.memoryEfficiency} />
+          </View>
+        </GroupView>
+        <SettingListItem
+          icon={Icons.plugins}
+          settingName="PluginsSetting"
+          onPress={() => navigation.navigate(VIEW.PLUGINS)}
+          settingCategory="Settings"
+        />
+        {!APPSTORE && (
+          <SettingListItem
+            icon={Icons.update}
+            settingName="VersionCheck"
+            onPress={() => checkVersion(false)}
+            settingCategory="DeveloperSettings"
+          />
+        )}
+        <SettingListItem
+          icon={Icons.showlog}
+          settingName="DebugLog"
+          onPress={showDebugLog}
+          settingCategory="DeveloperSettings"
+        />
+        <SettingListItem
+          icon={Icons.showlog}
+          settingName="Log"
+          onPress={() => showLog()}
+          settingCategory="DeveloperSettings"
+        />
+        <SettingListItem
+          icon={Icons.setlog}
+          settingName="LogLevel"
+          onPress={selectLogLevel}
+          settingCategory="DeveloperSettings"
+          modifyDescription={val =>
+            `${val}: ${logLevelString[getState().logLevel]}`
+          }
+        />
+        <SettingListItem
+          icon={Icons.fade}
+          settingName="Fade"
+          onPress={selectFade}
+          settingCategory="DeveloperSettings"
+          modifyDescription={val => `${val}: ${fadeIntervalMs}ms`}
+        />
+        {isAndroid && (
+          <SettingListItem
+            icon={Icons.crossfade}
+            settingName="crossfade"
+            onPress={selectCrossFade}
+            settingCategory="DeveloperSettings"
+            modifyDescription={v => `${v}: ${playerSetting.crossfade * 1000}ms`}
+          />
+        )}
+        <SelectSetting
+          setSelectVisible={setSelectVisible}
+          setCurrentSelectOption={setCurrentSelectOption}
+          options={ArtworkResOptions}
+          renderOption={(option: number) => `${option}p`}
+          settingKey="artworkRes"
+          icon={Icons.ArtworkRes}
+          settingCategory="DeveloperSettings"
+          modifyDescription={v => `${v}: ${playerSetting.artworkRes}p`}
+        />
+        <SettingListItem
+          icon={Icons.cache}
+          settingName="CacheSize"
+          onPress={selectCacheLevel}
+          settingCategory="DeveloperSettings"
+          modifyDescription={() =>
+            t('DeveloperSettings.CacheSizeDesc2', {
+              val: playerSetting.cacheSize,
+            })
+          }
+        />
+        <SettingListItem
+          icon={Icons.clearcache}
+          settingName="ClearCache"
+          onPress={NoxCache.noxMediaCache.clearCache}
+          settingCategory="DeveloperSettings"
+          modifyDescription={() =>
+            t('DeveloperSettings.ClearCacheDesc2', {
+              val: NoxCache.noxMediaCache.cacheSize() || 0,
+            })
+          }
+        />
+        <SettingListItem
+          icon={Icons.clearOrphanCache}
+          settingName="ClearOrphanedCache"
+          onPress={cleanOrphanedCache}
+          settingCategory="DeveloperSettings"
+          modifyDescription={() =>
+            t('DeveloperSettings.ClearOrphanedCacheDesc2', {
+              val: orphanedCache.length,
+            })
+          }
+        />
+        <SettingListItem
+          icon={Icons.Tanaka}
+          settingName="Tanaka"
+          onPress={async () =>
+            Alert.alert(
+              t('DeveloperSettings.TanakaName'),
+              await getTakanaDesc(),
+              [
+                { text: t('Dialog.nullify'), onPress: disableTanaka },
+                { text: t('Dialog.ok'), onPress: enableTanaka },
+              ],
+              { cancelable: true },
+            )
+          }
+          settingCategory="DeveloperSettings"
+        />
+      </List.Section>
+    </ScrollView>
+  );
+};
+
+const HomeWrapper = ({ navigation }: NoxComponent.StackNavigationProps) => {
+  const playerStyle = useNoxSetting(state => state.playerStyle);
+  return (
+    <SelectDialogWrapper
+      viewStyle={{
         backgroundColor: playerStyle.customColors.maskedBackgroundColor,
         flex: 1,
       }}
-    >
-      <ScrollView>
-        <List.Section>
-          <GroupView>
-            <View>
-              <RenderSetting item={developerSettings.noInterruption} />
-              <RenderSetting item={developerSettings.prefetchTrack} />
-              {isAndroid && (
-                <>
-                  <RenderSetting item={developerSettings.audioOffload} />
-                  <RenderSetting item={developerSettings.skipSilence} />
-                  <RenderSetting
-                    item={developerSettings.parseEmbeddedArtwork}
-                  />
-                </>
-              )}
-              <RenderSetting item={developerSettings.memoryEfficiency} />
-            </View>
-          </GroupView>
-          <SettingListItem
-            icon={Icons.plugins}
-            settingName="PluginsSetting"
-            onPress={() => navigation.navigate(VIEW.PLUGINS)}
-            settingCategory="Settings"
-          />
-          {!APPSTORE && (
-            <SettingListItem
-              icon={Icons.update}
-              settingName="VersionCheck"
-              onPress={() => checkVersion(false)}
-              settingCategory="DeveloperSettings"
-            />
-          )}
-          <SettingListItem
-            icon={Icons.showlog}
-            settingName="DebugLog"
-            onPress={showDebugLog}
-            settingCategory="DeveloperSettings"
-          />
-          <SettingListItem
-            icon={Icons.showlog}
-            settingName="Log"
-            onPress={() => showLog()}
-            settingCategory="DeveloperSettings"
-          />
-          <SettingListItem
-            icon={Icons.setlog}
-            settingName="LogLevel"
-            onPress={selectLogLevel}
-            settingCategory="DeveloperSettings"
-            modifyDescription={val =>
-              `${val}: ${logLevelString[getState().logLevel]}`
-            }
-          />
-          <SettingListItem
-            icon={Icons.fade}
-            settingName="Fade"
-            onPress={selectFade}
-            settingCategory="DeveloperSettings"
-            modifyDescription={val => `${val}: ${fadeIntervalMs}ms`}
-          />
-          {isAndroid && (
-            <SettingListItem
-              icon={Icons.crossfade}
-              settingName="crossfade"
-              onPress={selectCrossFade}
-              settingCategory="DeveloperSettings"
-              modifyDescription={v =>
-                `${v}: ${playerSetting.crossfade * 1000}ms`
-              }
-            />
-          )}
-          <SettingListItem
-            icon={Icons.cache}
-            settingName="CacheSize"
-            onPress={selectCacheLevel}
-            settingCategory="DeveloperSettings"
-            modifyDescription={() =>
-              t('DeveloperSettings.CacheSizeDesc2', {
-                val: playerSetting.cacheSize,
-              })
-            }
-          />
-          <SettingListItem
-            icon={Icons.clearcache}
-            settingName="ClearCache"
-            onPress={NoxCache.noxMediaCache.clearCache}
-            settingCategory="DeveloperSettings"
-            modifyDescription={() =>
-              t('DeveloperSettings.ClearCacheDesc2', {
-                val: NoxCache.noxMediaCache.cacheSize() || 0,
-              })
-            }
-          />
-          <SettingListItem
-            icon={Icons.clearOrphanCache}
-            settingName="ClearOrphanedCache"
-            onPress={cleanOrphanedCache}
-            settingCategory="DeveloperSettings"
-            modifyDescription={() =>
-              t('DeveloperSettings.ClearOrphanedCacheDesc2', {
-                val: orphanedCache.length,
-              })
-            }
-          />
-          <SettingListItem
-            icon={Icons.Tanaka}
-            settingName="Tanaka"
-            onPress={async () =>
-              Alert.alert(
-                t('DeveloperSettings.TanakaName'),
-                await getTakanaDesc(),
-                [
-                  { text: t('Dialog.nullify'), onPress: disableTanaka },
-                  { text: t('Dialog.ok'), onPress: enableTanaka },
-                ],
-                { cancelable: true },
-              )
-            }
-            settingCategory="DeveloperSettings"
-          />
-        </List.Section>
-      </ScrollView>
-      <GenericSelectDialog
-        visible={selectVisible}
-        options={currentSelectOption.options}
-        renderOptionTitle={currentSelectOption.renderOption}
-        title={currentSelectOption.title}
-        defaultIndex={currentSelectOption.defaultIndex}
-        onClose={currentSelectOption.onClose}
-        onSubmit={currentSelectOption.onSubmit}
-      />
-    </View>
+      Children={p => Home({ ...p, navigation })}
+    />
   );
 };
 
@@ -342,7 +354,7 @@ const DevSettingsView = () => {
     <Stack.Navigator>
       <Stack.Screen
         name={VIEW.HOME}
-        component={Home}
+        component={HomeWrapper}
         options={{ headerShown: false }}
       />
       <Stack.Screen

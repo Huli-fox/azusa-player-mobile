@@ -11,6 +11,10 @@ import { IntentData } from '@enums/Intent';
 import { useNoxSetting } from '@stores/useApp';
 import usePlayStore from './usePlayStore';
 import { buildBrowseTree } from './usePlaybackAA';
+import { NativeModules } from 'react-native';
+import useActiveTrack from './useActiveTrack';
+
+const { NoxModule } = NativeModules;
 
 const initializePlayer = async (safeMode = false) => {
   const {
@@ -47,13 +51,18 @@ const initializePlayer = async (safeMode = false) => {
 
 export const appStartupInit = initializePlayer();
 
-export default ({ intentData }: NoxComponent.AppProps) => {
+export default ({ intentData, vip }: NoxComponent.SetupPlayerProps) => {
   const [playerReady, setPlayerReady] = useState<boolean>(false);
   const { updateVersion, checkVersion } = useVersionCheck();
   const setIntentData = useNoxSetting(state => state.setIntentData);
   const { checkPlayStoreUpdates } = usePlayStore();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _activeTrack = useActiveTrack();
 
   useEffect(() => {
+    if (!vip) {
+      NoxModule?.loadRN();
+    }
     let unmounted = false;
     (async () => {
       await appStartupInit;
@@ -68,20 +77,33 @@ export default ({ intentData }: NoxComponent.AppProps) => {
       if (unmounted) return;
       checkPlayStoreUpdates();
       setIntentData(intentData);
-      switch (intentData) {
-        case IntentData.Resume:
-          await TrackPlayer.play();
-          break;
-        case IntentData.PlayAll:
-          // this hook cannot use usePlayback bc of rerendering..??
-          break;
-        default:
-          await TrackPlayer.pause();
+      if (!(await TrackPlayer.validateOnStartCommandIntent())) {
+        TrackPlayer.play();
+      } else {
+        switch (intentData) {
+          case IntentData.Resume:
+            await TrackPlayer.play();
+            break;
+          case IntentData.PlayAll:
+            // this hook cannot use usePlayback bc of rerendering..??
+            break;
+          case undefined:
+            await TrackPlayer.pause();
+            break;
+          default:
+          // await TrackPlayer.pause();
+        }
       }
     })();
     return () => {
       unmounted = true;
     };
   }, []);
+
+  useEffect(() => {
+    // HACK: fix when starting via notification clicks, loadRN is not set yet
+    playerReady && NoxModule?.loadRN();
+  }, [playerReady]);
+
   return playerReady;
 };
