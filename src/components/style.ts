@@ -124,7 +124,7 @@ export const replaceStyleColor = ({
       secondary: secondaryColor,
       background: backgroundColor,
       onSurface: primaryColor,
-      onSurfaceVariant: primaryColor,
+      onSurfaceVariant: secondaryColor,
       text: primaryColor,
     },
   };
@@ -148,6 +148,11 @@ export const replaceStyleColor = ({
 
 export const styles = StyleSheet.create({
   flex: { flex: 1 },
+  centeredFlex: {
+    justifyContent: 'center',
+    flex: 1,
+  },
+  centerText: { textAlign: 'center' },
   screenContainer: {
     flex: 1,
     backgroundColor: 'white',

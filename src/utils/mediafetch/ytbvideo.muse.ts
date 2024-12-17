@@ -1,4 +1,5 @@
 import { get_song } from 'libmuse';
+import _ from 'lodash';
 
 import SongTS from '@objects/Song';
 import { Source } from '@enums/MediaFetch';
@@ -32,7 +33,6 @@ export const resolveURL = async (song: NoxMedia.Song) => {
 
 export const fetchAudioInfo = async (sid: string) => {
   const ytdlInfo = await get_song(sid);
-  console.debug(ytdlInfo);
   const { videoDetails } = ytdlInfo;
   const formats = ytdlInfo.adaptive_formats ?? ytdlInfo.formats ?? [];
   const validDurations = formats.filter(format => format.duration_ms);
@@ -44,10 +44,7 @@ export const fetchAudioInfo = async (sid: string) => {
       nameRaw: videoDetails.title,
       singer: videoDetails.author,
       singerId: videoDetails.channelId,
-      cover:
-        videoDetails.thumbnail.thumbnails[
-          videoDetails.thumbnail.thumbnails.length - 1
-        ]!.url,
+      cover: _.last(videoDetails.thumbnail.thumbnails)!.url,
       lyric: '',
       page: 1,
       duration:

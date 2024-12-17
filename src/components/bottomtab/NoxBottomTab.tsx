@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
 import { getDrawerStatusFromState } from '@react-navigation/drawer';
 
 import { NoxRoutes } from '@enums/Routes';
@@ -9,6 +8,7 @@ import { useNoxSetting } from '@stores/useApp';
 import { BottomTabRouteIcons as RouteIcons } from '@enums/BottomTab';
 import { useIsLandscape } from '@hooks/useOrientation';
 import { isIOS } from '@utils/RNUtils';
+import useNavigation from '@hooks/useNavigation';
 
 interface IconProps {
   icon: string;
@@ -17,6 +17,7 @@ interface IconProps {
 const BottomIconButton = ({ icon, onPress }: IconProps) => {
   return (
     <IconButton
+      mode={icon.includes('outline') ? undefined : 'contained'}
       icon={icon}
       style={styles.iconButton}
       size={40}
@@ -26,11 +27,11 @@ const BottomIconButton = ({ icon, onPress }: IconProps) => {
 };
 
 const NoxAndroidBottomTab = ({ navigation }: NoxComponent.NavigationProps2) => {
-  const navigationGlobal = useNavigation();
+  const navigationG = useNavigation();
   const playerStyle = useNoxSetting(state => state.playerStyle);
   const gestureMode = useNoxSetting(state => state.gestureMode);
   const route = useNoxSetting(state => state.bottomTabRoute);
-  const setRoute = useNoxSetting(state => state.setBottomTabRoute);
+  const toggleDrawer = useNoxSetting(state => state.toggleBottomTabDrawer);
   const isLandscape = useIsLandscape();
 
   const isDrawerOpen = () =>
@@ -40,7 +41,7 @@ const NoxAndroidBottomTab = ({ navigation }: NoxComponent.NavigationProps2) => {
 
   const onDrawerPress = () => {
     if (navigation === undefined) return;
-    setRoute(RouteIcons.playlist);
+    toggleDrawer();
     if (isDrawerOpen()) {
       navigation.closeDrawer();
       return;
@@ -51,46 +52,36 @@ const NoxAndroidBottomTab = ({ navigation }: NoxComponent.NavigationProps2) => {
   const renderIcon = (icon: RouteIcons) =>
     route === icon ? icon : `${icon}-outline`;
 
-  if (gestureMode) {
-    return (
-      <View style={{ backgroundColor: playerStyle.colors.background }}>
-        <View
-          style={[
-            styles.panel,
-            { backgroundColor: playerStyle.colors.background },
-            isLandscape ? { paddingBottom: 0 } : {},
-          ]}
-        >
-          <BottomIconButton
-            icon={renderIcon(RouteIcons.playlist)}
-            onPress={onDrawerPress}
-          />
-          <BottomIconButton
-            icon={renderIcon(RouteIcons.music)}
-            onPress={() => {
-              navigationGlobal.navigate(NoxRoutes.PlayerHome as never);
-              setRoute(RouteIcons.music);
-            }}
-          />
-          <BottomIconButton
-            icon={renderIcon(RouteIcons.explore)}
-            onPress={() => {
-              navigationGlobal.navigate(NoxRoutes.Explore as never);
-              setRoute(RouteIcons.explore);
-            }}
-          />
-          <BottomIconButton
-            icon={renderIcon(RouteIcons.setting)}
-            onPress={() => {
-              navigationGlobal.navigate(NoxRoutes.Settings as never);
-              setRoute(RouteIcons.setting);
-            }}
-          />
-        </View>
-      </View>
-    );
+  if (!gestureMode) {
+    return <></>;
   }
-  return <></>;
+  return (
+    <View
+      style={{
+        backgroundColor:
+          playerStyle.colors.elevation?.level5 ?? playerStyle.colors.background,
+      }}
+    >
+      <View style={[styles.panel, isLandscape ? { paddingBottom: 0 } : {}]}>
+        <BottomIconButton
+          icon={renderIcon(RouteIcons.playlist)}
+          onPress={onDrawerPress}
+        />
+        <BottomIconButton
+          icon={renderIcon(RouteIcons.music)}
+          onPress={() => navigationG.navigate({ route: NoxRoutes.PlayerHome })}
+        />
+        <BottomIconButton
+          icon={renderIcon(RouteIcons.explore)}
+          onPress={() => navigationG.navigate({ route: NoxRoutes.Explore })}
+        />
+        <BottomIconButton
+          icon={renderIcon(RouteIcons.setting)}
+          onPress={() => navigationG.navigate({ route: NoxRoutes.Settings })}
+        />
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
