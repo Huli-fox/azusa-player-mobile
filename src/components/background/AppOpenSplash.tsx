@@ -1,3 +1,4 @@
+import React from 'react';
 import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import Video from 'react-native-video';
@@ -87,7 +88,7 @@ const AppOpenSplash = ({ setIsSplashReady }: Props) => {
         <Image
           source={randomSplash[1]()}
           style={styles.fullscreen}
-          resizeMode={'contain'}
+          contentFit={'contain'}
         />
       );
   }

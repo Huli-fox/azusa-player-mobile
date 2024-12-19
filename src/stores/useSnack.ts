@@ -2,7 +2,7 @@ import { logger } from '../utils/Logger';
 import { create } from 'zustand';
 import { timeout } from '../utils/Utils';
 
-interface SetSnack {
+export interface SetSnack {
   snackMsg: { processing?: string; success: string; fail?: string };
   snackDuration?: number;
   onDismiss?: () => void;
@@ -28,7 +28,7 @@ export enum SnackType {
   Processing = 'processing',
 }
 
-export default create<NoxSnack>((set, get) => ({
+const useSnack = create<NoxSnack>((set, get) => ({
   snackMsg: 'The quick brown fox jumps over the lazy dog.',
   snackVisible: false,
   snackType: SnackType.Success,
@@ -97,3 +97,10 @@ export default create<NoxSnack>((set, get) => ({
     });
   },
 }));
+
+export const setSnackMsg = (msg: string) =>
+  useSnack.getState().setSnack({
+    snackMsg: { success: msg },
+  });
+
+export default useSnack;

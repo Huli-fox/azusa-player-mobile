@@ -1,5 +1,17 @@
 {
   "_comment": "src/localization/en/translation.json",
+  "Billing": {
+    "PremiumFeaturesIntro": "感谢你对中国管人事业的支持。您赞助的每一分钱将用于购买《博德之门3》。APM PRO将隐藏启动广告。",
+    "NoxAuth": "b站认证",
+    "RevenueCat": "APP内购（RevenueCat）",
+    "NoxFans": "暗精灵和小孩梓当月舰长尊享APM VIP服务。点击上方b站认证即可。",
+    "thankU": "又要到饭了兄弟们!",
+    "godBlessU": "太破费了太破费了，好久没有收到这么贵重的礼物了",
+    "urVeryVeryGorgeous": "最后祝您身体健康万事如意，股票upup",
+    "StripePurchase": "stripe购买 ",
+    "StripePurchaseNote": "!!请在biliID下填入{{biliMid}}!!\n购买完成后请重启APM",
+    "BiliUserNotLoggedIn": "你必须登录b站才能购买高级功能."
+  },
   "BiliCategory": {
     "top": "b站全站音乐榜",
     "ranking": "b站音乐区排行榜",
@@ -16,7 +28,8 @@
     "homeScreenName": "音乐",
     "exploreScreenName": "发现",
     "settingScreenName": "设置",
-    "LoginName": "b站登录"
+    "LoginName": "b站登录",
+    "PremiumName": "高级播放器"
   },
   "Dialog": {
     "ok": "好的",
@@ -134,6 +147,14 @@
     "prefetchTrackDesc": "预加载下一首歌（仅在歌曲缓存开启时有用）",
     "chatGPTResolveSongNameName": "ChatGPT找歌",
     "chatGPTResolveSongNameDesc": "TODO：用chatGPT解析歌名",
+    "noBiliR128GainName": "Disable BiliR128Gain",
+    "noBiliR128GainDesc": "Disable Bili R128gain, use ffmpeg instead",
+    "pausePlaybackOnMuteName": "静音时暂停播放",
+    "pausePlaybackOnMuteDesc": "在Android上静音时暂停播放",
+    "artworkCarouselName": "artwork carousel",
+    "artworkCarouselDesc": "artowrk carousel",
+    "preferYTMSuggestName": "优先使用YTM搜索",
+    "preferYTMSuggestDesc": "优先使用YTM搜索,而不是yt相关视频",
     "useSuggestionName": "b站搜索联想",
     "useSuggestionDesc": "搜索时向b站提交联想词请求",
     "noRepeatName": "歌单不重复",
@@ -167,6 +188,8 @@
     "FadeName": "淡入淡出",
     "FadeDesc": "淡入淡出区间（需重启）",
     "FadeTitle": "设置淡入淡出 (毫秒)",
+    "artworkResName": "专辑封面分辨率",
+    "artworkResDesc": "降低专辑封面分辨率(？？？)",
     "crossfadeName": "交叉渐变",
     "crossfadeDesc": "交叉渐变区间（需重启）",
     "crossfadeTitle": "设置交叉渐变 (毫秒)",
@@ -212,6 +235,8 @@
     "SplashSettingDesc": "观赏管人播放器的开屏广告",
     "DeveloperOptionsName": "开发者选项",
     "DeveloperOptionsDesc": "正在测试的功能",
+    "PremiumSettingName": "高级播放器",
+    "PremiumSettingDesc": "购买高级播放器",
     "AListOptionsName": "AList",
     "AListOptionsDesc": "AList密钥设置",
     "DownloadOptionsName": "下载",
@@ -242,7 +267,7 @@
     "RegExpName": "更新 RegExp",
     "RegExpDesc": "从 Github 更新 RegExp 规则",
     "MusicFreeName": "MusicFree 插件",
-    "MusicFreeDesc": "启用 MusicFree 插件",
+    "MusicFreeDesc": "不要使用 后果自负",
     "MusicFreeCheckTitle": "MusicFree 插件",
     "R128GainName": "更新 R18Gain",
     "R128GainDesc": "从 GitHub 更新 R18Gain 规则",
@@ -250,6 +275,8 @@
     "ABRepeatDesc": "从 GitHub 更新 ABRepeat 规则"
   },
   "AppearanceSettings": {
+    "selectPhotoName": "选择照片",
+    "selectPhotoDesc": "选择本地照片作为背景",
     "noWeebSkinsName": "二次元收收味",
     "noWeebSkinsDesc": "二次元味儿太冲",
     "accentColorName": "用专辑主题色",
@@ -289,6 +316,7 @@
     "PersonalCloudDownloadSuccess": "歌单同步自PersonalCloud成功！",
     "PersonalCloudDownloadFail": "云端歌单不存在",
     "PersonalCloudDownloadFailSnackbar": "歌单同步到PersonalCloud失败，错误记录在控制台里",
+    "PersonalCloudKeySuggestion": "如果你使用了 NoxPlayer 的扩展，请使用你的**哔哩哔哩用户名**作为 key",
     "personalCloudIPPlaceholder": "末尾带/",
     "personalCloudIPLabel": "私有云地址",
     "personalCloudKeyPlaceholder": "",
@@ -315,7 +343,10 @@
     "BilibiliLoginProbeFailed": "检查二维码失败，请检查网络",
     "Disclaimer": "由于电梓播放器第三方的身份，使用b站账号cookie有可能导致被风控封号。虽然王胡桃本人以身试法自用cookie，但请最起码开小号使用b站功能",
     "SyncBiliFavlist": "自b站收藏夹同步",
-    "Logout": "登出"
+    "Logout": "登出",
+    "Clear": "清除缓存（紧急）",
+    "Login": "登入",
+    "Check": "检查登陆"
   },
   "VersionUpdate": {
     "DownloadAPK": "更新",
