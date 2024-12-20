@@ -48,6 +48,11 @@ declare global {
       skipSilence: boolean;
       parseEmbeddedArtwork: boolean;
       crossfade: number;
+      preferYTMSuggest: boolean;
+      artworkRes: number;
+      artworkCarousel: boolean;
+      pausePlaybackOnMute: boolean;
+      noBiliR128Gain: boolean;
 
       appID: string;
       language?: string;

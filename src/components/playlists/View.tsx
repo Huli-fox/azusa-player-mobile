@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IconButton, Divider, Text, TouchableRipple } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
 import { View, ImageBackground, StyleSheet, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +10,7 @@ import { NoxRoutes } from '@enums/Routes';
 import { logger } from '@utils/Logger';
 import Playlists from './Playlists';
 import { BottomTabRouteIcons as RouteIcons } from '@enums/BottomTab';
+import useNavigation from '@hooks/useNavigation';
 
 interface Props {
   view: NoxRoutes;
@@ -21,17 +21,20 @@ interface Props {
 const RenderDrawerItem = ({ view, icon, text, routeIcon }: Props) => {
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const setRoute = useNoxSetting(state => state.setBottomTabRoute);
+  const playerStyle = useNoxSetting(state => state.playerStyle);
 
   return (
     <TouchableRipple
-      onPress={() => {
-        navigation.navigate(view as never);
-        if (routeIcon) setRoute(routeIcon);
-      }}
+      onPress={() =>
+        navigation.navigate({ route: view, setIcon: routeIcon !== undefined })
+      }
     >
       <View style={styles.drawerItemContainer}>
-        <IconButton icon={icon} size={32} />
+        <IconButton
+          icon={icon}
+          size={32}
+          iconColor={playerStyle.colors.primary}
+        />
         <View style={styles.drawerItemTextContainer}>
           <Text variant="titleLarge">{t(text)}</Text>
         </View>
@@ -52,11 +55,12 @@ const BiliCard = (props: any) => {
   return <>{props.children}</>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default (props: any) => {
+export default () => {
   const navigation = useNavigation();
+  const [layoutHeight, setLayoutHeight] = useState(0);
   const playlistIds = useNoxSetting(state => state.playlistIds);
   const playerStyle = useNoxSetting(state => state.playerStyle);
+
   // HACK: I know its bad! But somehow this hook isnt updating in its own
   // useEffects...
   const { buildBrowseTree } = usePlaybackAA();
@@ -69,7 +73,7 @@ export default (props: any) => {
     function deepLinkHandler(data: { url: string }) {
       if (data.url === 'trackplayer://notification.click') {
         logger.debug('[Drawer] click from notification; navigate to home');
-        navigation.navigate(NoxRoutes.PlayerHome as never);
+        navigation.navigate({ route: NoxRoutes.PlayerHome });
       }
     }
 
@@ -82,7 +86,12 @@ export default (props: any) => {
   }, []);
 
   return (
-    <View {...props} style={{ flex: 1 }}>
+    <View
+      style={layoutHeight === 0 ? styles.flex : { height: layoutHeight }}
+      onLayout={e =>
+        layoutHeight === 0 && setLayoutHeight(e.nativeEvent.layout.height)
+      }
+    >
       <View style={styles.topPadding} />
       <BiliCard backgroundURI={playerStyle.biliGarbCard}>
         <RenderDrawerItem
@@ -111,6 +120,7 @@ export default (props: any) => {
 };
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   topPadding: {
     height: 10,
   },

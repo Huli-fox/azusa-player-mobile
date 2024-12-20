@@ -38,6 +38,7 @@ export default ({ disabled = false, playlist, songListUpdateHalt }: Props) => {
         onPress={handlePress}
         size={25}
         disabled={disabled}
+        //iconColor={playerStyle.colors.primary}
       />
       <Dialog
         visible={dialogOpen}

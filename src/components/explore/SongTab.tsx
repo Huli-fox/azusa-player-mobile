@@ -5,16 +5,18 @@ import {
   Dimensions,
   FlatList,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
 
 import { chunkArray } from '@utils/Utils';
 import { useNoxSetting } from '@stores/useApp';
 import usePlayback from '@hooks/usePlayback';
 import { NoxRoutes } from '@enums/Routes';
+import useNavigation from '@hooks/useNavigation';
+import { styles } from '../style';
 
 export interface BiliCatSongs {
   [key: number]: NoxMedia.Song[];
@@ -39,24 +41,20 @@ export const BiliSongCard = ({
   const fontColor = playerStyle.colors.primary;
 
   return (
-    <View
-      style={{
-        width: Dimensions.get('window').width * 0.8,
-        height: 390,
-        paddingRight: 10,
-        paddingLeft: 5,
-      }}
-    >
+    <View style={style.cardContainer}>
       {title && <Text style={{ fontSize: 20, color: fontColor }}>{title}</Text>}
       <FlatList
         showsVerticalScrollIndicator={false}
         data={songs}
         renderItem={({ item }) => (
-          <View style={{ paddingVertical: 10 }}>
+          <View style={style.padding}>
             <TouchableOpacity
-              style={{ height: 70, flexDirection: 'row' }}
+              style={style.cardPressable}
               onPress={() => {
-                navigationGlobal.navigate(NoxRoutes.Playlist as never);
+                navigationGlobal.navigate({
+                  route: NoxRoutes.PlayerHome,
+                  options: { screen: NoxRoutes.Playlist },
+                });
                 playAsSearchList({
                   songs: totalSongs ?? songs,
                   song: item,
@@ -64,11 +62,8 @@ export const BiliSongCard = ({
                 }).then(() => setTimeout(scroll, 500));
               }}
             >
-              <Image
-                style={{ width: 70, height: 70, borderRadius: 5 }}
-                source={{ uri: item.cover }}
-              />
-              <View style={{ flex: 1 }}>
+              <Image style={style.cardThumbnail} source={{ uri: item.cover }} />
+              <View style={styles.flex}>
                 <Text
                   style={{
                     color: fontColor,
@@ -104,9 +99,7 @@ export const BiliSongCatsCard = ({ songs = {} }: { songs?: BiliCatSongs }) => {
 
   return (
     <View>
-      <Text style={{ fontSize: 20, paddingLeft: 5, paddingBottom: 10 }}>
-        {t('BiliCategory.ranking')}
-      </Text>
+      <Text style={style.catContainer}>{t('BiliCategory.ranking')}</Text>
       <ScrollView
         horizontal
         disableIntervalMomentum
@@ -121,7 +114,7 @@ export const BiliSongCatsCard = ({ songs = {} }: { songs?: BiliCatSongs }) => {
             songs={songs[Number(k)]}
           />
         ))}
-        <View style={{ width: Dimensions.get('window').width * 0.2 }}></View>
+        <View style={style.paddingVertical}></View>
       </ScrollView>
     </View>
   );
@@ -138,9 +131,7 @@ export const BiliSongsArrayTabCard = ({
 
   return (
     <View>
-      <Text style={{ fontSize: 20, paddingLeft: 5, paddingBottom: 10 }}>
-        {title}
-      </Text>
+      <Text style={style.arrayText}>{title}</Text>
       <ScrollView
         horizontal
         disableIntervalMomentum
@@ -150,12 +141,12 @@ export const BiliSongsArrayTabCard = ({
       >
         {splicedSongs.map((k, i) => (
           <BiliSongCard
-            key={`BiliRankTab${k[0].id}`}
+            key={`BiliRankTab${k[0].id ?? i}`}
             songs={k}
             totalSongs={songs}
           />
         ))}
-        <View style={{ width: Dimensions.get('window').width * 0.2 }}></View>
+        <View style={style.paddingVertical}></View>
       </ScrollView>
     </View>
   );
@@ -175,3 +166,18 @@ export const BiliSongsTabCard = ({
 
   return <BiliSongsArrayTabCard title={title} songs={concatSongs} />;
 };
+
+const style = StyleSheet.create({
+  cardContainer: {
+    width: Dimensions.get('window').width * 0.8,
+    height: 390,
+    paddingRight: 10,
+    paddingLeft: 5,
+  },
+  padding: { paddingVertical: 10 },
+  cardPressable: { height: 70, flexDirection: 'row' },
+  cardThumbnail: { width: 70, height: 70, borderRadius: 5 },
+  catContainer: { fontSize: 20, paddingLeft: 5, paddingBottom: 10 },
+  paddingVertical: { width: Dimensions.get('window').width * 0.2 },
+  arrayText: { fontSize: 20, paddingLeft: 5, paddingBottom: 10 },
+});

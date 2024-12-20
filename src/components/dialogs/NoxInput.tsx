@@ -15,6 +15,7 @@ interface InputProps {
   secureTextEntry?: boolean;
   style?: TextStyle;
   reactNative?: boolean;
+  numberOfLines?: number;
 }
 
 export default ({
@@ -27,6 +28,7 @@ export default ({
   secureTextEntry,
   style,
   reactNative = false,
+  numberOfLines = 1,
 }: InputProps) => {
   const playerStyle = useNoxSetting(state => state.playerStyle);
   const Input = reactNative ? RNTextInput : TextInput;
@@ -41,8 +43,9 @@ export default ({
       selectTextOnFocus={selectTextOnFocus}
       selectionColor={playerStyle.customColors.textInputSelectionColor}
       autoFocus={autofocus}
-      textColor={playerStyle.colors.text}
+      textColor={playerStyle.colors.onSurfaceVariant}
       secureTextEntry={secureTextEntry}
+      numberOfLines={numberOfLines}
     />
   );
 };

@@ -37,8 +37,11 @@ export const Progress: React.FC<{ live?: boolean }> = ({ live }) => {
         <ProgressBarAPM />
         <ProgressBar
           progress={fetchProgress / 100}
-          color={playerStyle.customColors.progressMaximumTrackTintColor}
-          style={styles.progressBarDouble}
+          color={playerStyle.colors.secondary}
+          style={[
+            styles.progressBarDouble,
+            { backgroundColor: playerStyle.colors.secondaryContainer },
+          ]}
         />
       </View>
       <View style={[styles.labelContainer, { paddingHorizontal: 10 }]}>
@@ -74,7 +77,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -14,
     alignSelf: 'center',
-    backgroundColor: 'grey',
+    backgroundColor: 'lightgrey',
     borderRadius: 5,
   },
   labelContainer: {

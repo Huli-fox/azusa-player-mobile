@@ -13,7 +13,6 @@ import {
 import type { Track } from 'react-native-track-player';
 import { Image } from 'expo-image';
 import MarqueeText from 'react-native-text-ticker';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { useNoxSetting } from '@stores/useApp';
 import NoxPlayingList from '@stores/playingList';
@@ -81,16 +80,15 @@ const TrackInfoTemplate: React.FC<Props> = props => {
   const textStyle = [
     styles.titleText,
     {
-      color: playerStyle.colors.primary,
+      color: playerStyle.colors.onSurface,
     },
   ];
   const textSubStyle = [
     styles.artistText,
     {
-      color: playerStyle.colors.secondary,
+      color: playerStyle.colors.onSurfaceVariant,
     },
   ];
-
   return (
     <View style={[styles.container, containerStyle, { width: windowWidth }]}>
       {children ?? <AlbumArt {...props} />}
@@ -116,23 +114,8 @@ interface SongTitleProps {
   style: StyleProp<TextStyle>;
   text?: string;
 }
-const SongTitle = (props: SongTitleProps) => {
+export const SongTitle = (props: SongTitleProps) => {
   const resolveError = useRef(0);
-  const [renderCounter, setRenderCounter] = React.useState(false);
-  // HACK: force rerender by padding spaces to the text and changing it;
-  // if content fits there should be no visual difference (albeit did rerender);
-  // if content doesnt fit I'd rather have this slight "flicker" than no marquee effects
-  // TODO: why I cant force a rerender elsewise?
-  const space = renderCounter ? ' ' : '';
-  useFocusEffect(
-    React.useCallback(() => {
-      if (resolveError.current > 0) {
-        setRenderCounter(v => !v);
-        resolveError.current = 0;
-      }
-      return () => undefined;
-    }, []),
-  );
 
   return (
     <MarqueeText
@@ -143,7 +126,7 @@ const SongTitle = (props: SongTitleProps) => {
       easing={Easing.linear}
       onWidthResolveError={() => resolveError.current++}
     >
-      {`${space}${props.text}${space}`}
+      {`${props.text}`}
     </MarqueeText>
   );
 };

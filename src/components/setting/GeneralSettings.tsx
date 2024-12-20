@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { View, ScrollView } from 'react-native';
 import { useNoxSetting } from '@stores/useApp';
-import { RenderSetting } from './useRenderSetting';
-import { SettingEntry } from './SetttingEntries';
+import { RenderSetting } from './helpers/RenderSetting';
+import { SettingEntry } from './helpers/SettingEntry';
 
 const GEN_SETTING_BOOLEAN: SettingEntry[] = [
   {
@@ -55,6 +55,18 @@ const GEN_SETTING_BOOLEAN: SettingEntry[] = [
   },
   {
     settingName: 'noRepeat',
+    settingCategory: 'GeneralSettings',
+  },
+  {
+    settingName: 'preferYTMSuggest',
+    settingCategory: 'GeneralSettings',
+  },
+  {
+    settingName: 'pausePlaybackOnMute',
+    settingCategory: 'GeneralSettings',
+  },
+  {
+    settingName: 'noBiliR128Gain',
     settingCategory: 'GeneralSettings',
   },
 ];

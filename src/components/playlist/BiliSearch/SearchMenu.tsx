@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import { SearchOptions } from '@enums/Storage';
 import useAlert from '@components/dialogs/useAlert';
-import { MUSICFREE } from '@utils/mediafetch/musicfree';
 import Icons from './Icons';
 import { useNoxSetting } from '@stores/useApp';
 import { rgb2Hex } from '@utils/Utils';
@@ -33,7 +32,7 @@ export default ({
   const { OneWayAlert } = useAlert();
   const playerStyle = useNoxSetting(state => state.playerStyle);
   const setSearchOption = useNoxSetting(state => state.setSearchOption);
-  const setDefaultSearch = (defaultSearch: SearchOptions | MUSICFREE) => {
+  const setDefaultSearch = (defaultSearch: SearchOptions) => {
     toggleVisible();
     setSearchOption(defaultSearch);
   };
@@ -52,17 +51,17 @@ export default ({
   return (
     <Menu visible={visible} onDismiss={toggleVisible} anchor={menuCoords}>
       <Menu.Item
-        leadingIcon={Icons.BILIBILI}
+        leadingIcon={() => Icons.BILIBILI()}
         onPress={() => setDefaultSearch(SearchOptions.BILIBILI)}
         title={'Bilibili'}
       />
       <Menu.Item
-        leadingIcon={Icons.YOUTUBEM}
+        leadingIcon={() => Icons.YOUTUBEM()}
         onPress={() => setDefaultSearch(SearchOptions.YOUTUBEM)}
         title={'YT Music'}
       />
       <Menu.Item
-        leadingIcon={Icons.YOUTUBE}
+        leadingIcon={() => Icons.YOUTUBE()}
         onPress={() => setDefaultSearch(SearchOptions.YOUTUBE)}
         title={'Youtube'}
       />
@@ -74,13 +73,20 @@ export default ({
       {showMusicFree && (
         <Menu.Item
           leadingIcon={Icons.MUSICFREE}
-          onPress={() => setDefaultSearch(MUSICFREE.aggregated)}
-          title={`MusicFree.${MUSICFREE.aggregated}`}
+          onPress={() => setDefaultSearch(SearchOptions.MUSICFREE)}
+          title={`MusicFree.${SearchOptions.MUSICFREE}`}
         />
       )}
       {isAndroid && (
         <Menu.Item
-          leadingIcon={() => Icons.LOCAL(rgb2Hex(playerStyle.colors.primary))}
+          leadingIcon={() =>
+            Icons.LOCAL(
+              rgb2Hex(
+                playerStyle.colors.onSurfaceVariant ??
+                  playerStyle.colors.primary,
+              ),
+            )
+          }
           onPress={chooseLocalFolderAndroid}
           title={t('Menu.local')}
         />

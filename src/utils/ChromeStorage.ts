@@ -20,15 +20,8 @@ import { NoxRepeatMode } from '@enums/RepeatMode';
 import { PlaylistTypes } from '@enums/Playlist';
 import { StorageKeys, SearchOptions } from '@enums/Storage';
 import { DefaultSetting, OverrideSetting } from '@objects/Storage';
-import { MUSICFREE } from '@utils/mediafetch/musicfree';
 import { getAlistCred } from './alist/storage';
 import { timeFunction } from './Utils';
-
-export const setMusicFreePlugin = (val: MUSICFREE[]): Promise<void> =>
-  saveItem(StorageKeys.MUSICFREE_PLUGIN, val);
-
-export const getMusicFreePlugin = (): Promise<MUSICFREE[]> =>
-  getItem(StorageKeys.MUSICFREE_PLUGIN, []);
 
 export const getFadeInterval = async () =>
   Number(await getItem(StorageKeys.FADE_INTERVAL)) || 0;
@@ -60,7 +53,7 @@ export const saveABMapping = async (val: NoxStorage.ABDict) =>
 export const getDefaultSearch = (): Promise<SearchOptions> =>
   getItem(StorageKeys.DEFAULT_SEARCH, SearchOptions.BILIBILI);
 
-export const saveDefaultSearch = (val: SearchOptions | MUSICFREE) =>
+export const saveDefaultSearch = (val: SearchOptions) =>
   saveItem(StorageKeys.DEFAULT_SEARCH, val);
 
 export const getCachedMediaMapping = () =>
@@ -251,9 +244,10 @@ const saveImportedPlaylist = async (playlists: any[]) => {
 export const clearPlaylistNImport = async (parsedContent: any) => {
   await clearPlaylists();
   await saveImportedPlaylist(
-    parsedContent[StorageKeys.MY_FAV_LIST_KEY].map(
-      (val: string) => parsedContent[val],
-    ),
+    parsedContent[StorageKeys.MY_FAV_LIST_KEY].map((val: string) => ({
+      ...parsedContent[val],
+      songList: parsedContent[`${val}-songList`],
+    })),
   );
   await savePlaylistIds(parsedContent[StorageKeys.MY_FAV_LIST_KEY]);
 };
@@ -262,7 +256,7 @@ export const addImportedPlaylist = async (playlists: any[]) => {
   await saveImportedPlaylist(playlists);
   await savePlaylistIds(
     (await getItem(StorageKeys.MY_FAV_LIST_KEY)).concat(
-      playlists.map(val => val.info.id),
+      playlists.map(val => val.id),
     ),
   );
 };

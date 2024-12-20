@@ -34,10 +34,13 @@ const AzusaPlayer = () => {
   const defaultTheme = playerStyle.metaData.darkTheme
     ? CombinedDarkTheme
     : CombinedDefaultTheme;
+  const defaultNavTheme = playerStyle.metaData.darkTheme
+    ? NavigationDarkTheme
+    : NavigationDefaultTheme;
   const insets = useSafeAreaInsets();
   const { width, height } = Dimensions.get('window');
-  const actionPanelWidth = Math.min(120, height / 5);
-  const playerPanelWidth = width / 2 - actionPanelWidth;
+  const actionPanelWidth = Math.max(50, Math.min(120, height / 5));
+  const playerPanelWidth = Math.max(50, width / 2 - actionPanelWidth);
 
   return (
     <PaperProvider
@@ -56,6 +59,7 @@ const AzusaPlayer = () => {
             // at MainBackground level instaed of here.
             background: undefined,
           },
+          fonts: defaultNavTheme.fonts,
         }}
       >
         <View

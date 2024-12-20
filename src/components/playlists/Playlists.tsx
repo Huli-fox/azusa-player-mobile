@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { IconButton, Text, TouchableRipple } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
 import { Pressable, View, StyleSheet } from 'react-native';
-import DraggableFlatList, {
-  ScaleDecorator,
-  RenderItemParams,
-} from 'react-native-draggable-flatlist';
+import FlashDragList from 'react-native-flashdrag-list';
 
 import { useNoxSetting } from '@stores/useApp';
 import { NoxRoutes } from '@enums/Routes';
@@ -17,7 +13,7 @@ import ShuffleAllButton from '@components/playlists/ShuffleAllButton';
 import TimerButton from '@components/playlists/TimerButton';
 import PlaylistItem from '@components/playlists/PlaylistItem';
 import usePlaylistBrowseTree from '@hooks/usePlaylistBrowseTree';
-import { BottomTabRouteIcons as RouteIcons } from '@enums/BottomTab';
+import useNavigation from '@hooks/useNavigation';
 
 interface NewButtonProps {
   setNewPlaylistDialogOpen: (v: boolean) => void;
@@ -50,7 +46,6 @@ export default () => {
   const setCurrentPlaylist = useNoxSetting(state => state.setCurrentPlaylist);
   const setPlaylistIds = useNoxSetting(state => state.setPlaylistIds);
   const scroll = useNoxSetting(state => state.incSongListScrollCounter);
-  const setRoute = useNoxSetting(state => state.setBottomTabRoute);
   const { removePlaylist } = usePlaylistBrowseTree();
   const { TwoWayAlert } = useAlert();
   // HACK: I know its bad! But somehow this hook isnt updating in its own
@@ -70,8 +65,10 @@ export default () => {
   };
 
   const goToPlaylist = (playlistId: string) => {
-    navigation.navigate(NoxRoutes.Playlist as never);
-    setRoute(RouteIcons.music);
+    navigation.navigate({
+      route: NoxRoutes.PlayerHome,
+      options: { screen: NoxRoutes.Playlist },
+    });
     if (currentPlaylist.id === playlistId) {
       scroll();
     } else {
@@ -82,34 +79,39 @@ export default () => {
     }
   };
 
-  const renderItem = ({ item, drag, isActive }: RenderItemParams<string>) => {
+  const renderItem = (
+    item: string,
+    index: number,
+    active: boolean,
+    beginDrag: () => any,
+  ) => {
     const playlist = playlists[item];
     return (
-      <ScaleDecorator>
-        <TouchableRipple
-          onLongPress={drag}
-          disabled={isActive}
-          onPress={() => goToPlaylist(item)}
-          style={[
-            {
-              backgroundColor:
-                currentPlaylist.id === item
-                  ? playerStyle.customColors.playlistDrawerBackgroundColor
-                  : undefined,
-            },
-          ]}
-        >
-          <PlaylistItem
-            item={playlist}
-            confirmOnDelete={confirmOnDelete}
-            leadColor={
-              currentPlayingList.id === item
-                ? playerStyle.colors.primary //customColors.playlistDrawerBackgroundColor
-                : undefined
-            }
-          />
-        </TouchableRipple>
-      </ScaleDecorator>
+      <TouchableRipple
+        key={index}
+        onPress={() => goToPlaylist(item)}
+        onLongPress={beginDrag}
+        style={[
+          {
+            backgroundColor:
+              currentPlaylist.id === item
+                ? // this is a special high contrast color than primaryContainer.
+                  (playerStyle.customColors.playlistDrawerBackgroundColor ??
+                  playerStyle.colors.primaryContainer)
+                : undefined,
+          },
+        ]}
+      >
+        <PlaylistItem
+          item={playlist}
+          confirmOnDelete={confirmOnDelete}
+          leadColor={
+            currentPlayingList.id === item
+              ? playerStyle.colors.primary
+              : undefined
+          }
+        />
+      </TouchableRipple>
     );
   };
 
@@ -123,6 +125,7 @@ export default () => {
           <IconButton
             icon={'cards-heart'}
             onPress={() => goToPlaylist(StorageKeys.FAVORITE_PLAYLIST_KEY)}
+            iconColor={playerStyle.colors.primary}
           />
           <ShuffleAllButton />
           <AddPlaylistButton open={dialogOpen} setOpen={setDialogOpen} />
@@ -131,7 +134,7 @@ export default () => {
           {false && (
             <IconButton
               icon={'cog'}
-              onPress={() => navigation.navigate(NoxRoutes.Settings as never)}
+              onPress={() => navigation.navigate({ route: NoxRoutes.Settings })}
             />
           )}
         </View>
@@ -143,7 +146,9 @@ export default () => {
             backgroundColor:
               currentPlaylist.id ===
               playlists[StorageKeys.SEARCH_PLAYLIST_KEY]?.id
-                ? playerStyle.customColors.playlistDrawerBackgroundColor
+                ? // this is a special high contrast color than primaryContainer.
+                  (playerStyle.customColors.playlistDrawerBackgroundColor ??
+                  playerStyle.colors.primaryContainer)
                 : undefined,
           },
         ]}
@@ -158,7 +163,7 @@ export default () => {
           leadColor={
             currentPlayingList.id ===
             playlists[StorageKeys.SEARCH_PLAYLIST_KEY].id
-              ? playerStyle.colors.primary //customColors.playlistDrawerBackgroundColor
+              ? playerStyle.colors.primary
               : undefined
           }
         />
@@ -170,12 +175,17 @@ export default () => {
         onSubmit={() => setNewPlaylistDialogOpen(false)}
       />
       <View style={{ flex: 1 }}>
-        <DraggableFlatList
-          style={[styles.draggableFlatList]}
+        <FlashDragList
           data={playlistIds}
-          onDragEnd={({ data }) => setPlaylistIds(data)}
-          keyExtractor={item => item}
           renderItem={renderItem}
+          itemsSize={53}
+          onSort={(fromIndex, toIndex) => {
+            const copy = [...playlistIds];
+            const removed = copy.splice(fromIndex, 1);
+            copy.splice(toIndex, 0, removed[0]!);
+            setPlaylistIds(copy);
+          }}
+          extraData={[currentPlaylist.id, currentPlayingList.id]}
         />
       </View>
       <View style={styles.bottomInfo}>
@@ -210,9 +220,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  draggableFlatList: {},
   bottomInfo: {
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   bottomInfoText: {
     textAlign: 'center',

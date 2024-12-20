@@ -5,8 +5,12 @@ import 'text-encoding-polyfill';
 import 'react-native-url-polyfill/auto';
 import { decode, encode } from 'base-64';
 import { Innertube, ClientType } from 'youtubei.js';
+import { getSecure as getItem } from '@utils/ChromeStorageAPI';
 
+import { timeFunction } from '../Utils';
 import MMKV from '../fakeMMKV';
+import { StorageKeys } from '@enums/Storage';
+import logger from '../Logger';
 
 if (!global.btoa) {
   global.btoa = encode;
@@ -39,24 +43,30 @@ global.CustomEvent = CustomEvent as any;
 
 // === END === Making Youtube.js work
 
-const ytClient = Innertube.create({
-  retrieve_player: true,
-  enable_session_cache: false,
-  generate_session_locally: false,
-  client_type: ClientType.IOS,
-});
+let ytClient: undefined | Innertube;
 
-export default ytClient;
+const createYtClient = () =>
+  getItem(StorageKeys.YTMCOOKIES, undefined).then(() =>
+    Innertube.create({
+      retrieve_player: true,
+      enable_session_cache: false,
+      generate_session_locally: false,
+      client_type: ClientType.IOS,
+      //cookie,
+    }),
+  );
+
+export default async () => {
+  if (ytClient !== undefined) {
+    return ytClient;
+  }
+  logger.debug('[ytbi.js] ytClient is initializing. takes time...');
+  ytClient = (await timeFunction(createYtClient, 'ytClient init')).result;
+  return ytClient!;
+};
 
 export const ytClientWeb = Innertube.create({
   retrieve_player: false,
   enable_session_cache: false,
   generate_session_locally: false,
 });
-
-export const awaitYtbiSetup = async () => {
-  const startTime = new Date().getTime();
-  await ytClient;
-  await ytClientWeb;
-  console.log('[perf] ytbi setup took', new Date().getTime() - startTime, 'ms');
-};

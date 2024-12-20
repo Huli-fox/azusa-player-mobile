@@ -16,6 +16,7 @@ import MainBackground from './components/background/MainBackground';
 import useTheme from './hooks/useTheme';
 // eslint-disable-next-line import/no-unresolved
 import { TRACKING } from '@env';
+import { useSetupVIP } from './hooks/useVIP';
 
 if (TRACKING) {
   Sentry.init({
@@ -29,6 +30,8 @@ if (TRACKING) {
       'no audio url',
       'com.google.android.play.core.appupdate.internal.zzy',
       'TEST - Sentry Client Crash',
+      // its ok to not track muse error i think
+      /MuseError/,
     ],
   });
 }
@@ -51,9 +54,12 @@ const APM = ({ PIP, isLandscape }: { PIP: boolean; isLandscape: boolean }) => {
 };
 
 export default function App(appProps: NoxComponent.AppProps) {
-  const isSplashReady = useSplash(__DEV__ || appProps.intentData ? 1 : 2500);
-  const [isSplashAnimReady, setIsSplashReady] = React.useState(false);
-  const isPlayerReady = useSetupPlayer(appProps);
+  const { vip } = useSetupVIP();
+  const isSplashReady = useSplash(
+    __DEV__ || appProps.intentData || vip ? 1 : 2500,
+  );
+  const [isSplashAnimReady, setIsSplashAnimReady] = React.useState(vip);
+  const isPlayerReady = useSetupPlayer({ ...appProps, vip });
   const isLandscape = useIsLandscape();
   const PIPMode = useStore(appStore, state => state.pipMode);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -77,7 +83,7 @@ export default function App(appProps: NoxComponent.AppProps) {
   if (!(isPlayerReady && isSplashReady && isSplashAnimReady)) {
     return (
       <SafeAreaView style={styles.screenContainer}>
-        <AppOpenSplash setIsSplashReady={setIsSplashReady} />
+        <AppOpenSplash setIsSplashReady={setIsSplashAnimReady} />
       </SafeAreaView>
     );
   }

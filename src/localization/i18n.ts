@@ -1,4 +1,5 @@
 // src/localization/i18n.ts
+import 'intl-pluralrules';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import translationEN from './en/translation.json';
@@ -40,7 +41,7 @@ export const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  compatibilityJSON: 'v3',
+  compatibilityJSON: 'v4',
   lng: deviceLanguage,
   fallbackLng: 'en',
   interpolation: {

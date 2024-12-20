@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.media.ThumbnailUtils
 import android.net.Uri
+import android.os.Build
 import android.widget.RemoteViews
 import androidx.annotation.OptIn
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
@@ -36,14 +37,35 @@ class APMWidget : AppWidgetProvider() {
         if (!::binder.isInitialized || !binder.isBinderAlive) {
             if (context == null) return false
             val mBinder = peekService(context, Intent(context, MusicService::class.java)) ?: return false
-            binder = mBinder as MusicService.MusicBinder
-            if (!binder.isBinderAlive) return false
+            try {
+                binder = mBinder as MusicService.MusicBinder
+                if (!binder.isBinderAlive) return false
+            } catch (e: Exception) {
+                // HACK: likely this is bound by another binder. for example
+                // android.service.media.MediaBrowserService$ServiceBinder.
+                // TODO: display some error message here?
+                Timber.tag("APM-widget").e(e)
+                return false
+            }
         }
         return true
     }
 
+    private fun bindOrStartService(context: Context?): Boolean {
+        val res = bindService(context)
+        if (!res) {
+            // TODO: show a spinner?
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context?.startForegroundService(Intent(context, MusicService::class.java))
+            } else {
+                context?.startService(Intent(context, MusicService::class.java))
+            }
+        }
+        return res
+    }
+
     private fun emit(context: Context?, e: String) {
-        if (!bindService(context)) return
+        if (!bindOrStartService(context)) return
         binder.service.emit(e)
     }
 
@@ -78,7 +100,11 @@ class APMWidget : AppWidgetProvider() {
         }
         views.setTextViewText(R.id.songName, track?.title ?: "")
         views.setTextViewText(R.id.artistName, track?.artist ?: "")
-        views.setImageViewBitmap(R.id.albumArt, bitmap)
+        if (bitmap == null) {
+            views.setImageViewResource(R.id.albumArt, R.mipmap.ic_launcher_foreground)
+        } else {
+            views.setImageViewBitmap(R.id.albumArt, bitmap)
+        }
         return views
     }
 
@@ -120,7 +146,7 @@ class APMWidget : AppWidgetProvider() {
                     val bitmap  = binder.service.getCurrentBitmap()?.await()
                     val croppedBitmap = cropBitmap(bitmap)
                     val dr = RoundedBitmapDrawableFactory.create(context.resources, croppedBitmap)
-                    dr.cornerRadius = 100f
+                    dr.cornerRadius = 10f
                     updateTrack(views, currentTrack, dr.toBitmapOrNull())
                 }
             }
@@ -134,7 +160,9 @@ class APMWidget : AppWidgetProvider() {
     private fun cropBitmap(bitmap: Bitmap?): Bitmap? {
         if (bitmap == null) return null
         val dimension = bitmap.width.coerceAtMost(bitmap.height)
-        return ThumbnailUtils.extractThumbnail(bitmap, dimension, dimension)
+        val cropped = ThumbnailUtils.extractThumbnail(bitmap, dimension, dimension)
+        // bitmap.recycle()
+        return Bitmap.createScaledBitmap(cropped, 120, 120, false)
     }
 
     @OptIn(UnstableApi::class)

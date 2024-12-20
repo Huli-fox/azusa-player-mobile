@@ -91,7 +91,7 @@ const SongInfo = ({
         styles.container,
         {
           backgroundColor: currentPlaying
-            ? playerStyle.customColors.playlistDrawerBackgroundColorTransparent
+            ? 'rgba(103, 80, 164, 0.35)'
             : 'transparent',
           opacity: isItemSolid(item, networkCellular, playerSetting.dataSaver)
             ? undefined
@@ -120,7 +120,7 @@ const SongInfo = ({
                 )}. ${title}`}</Text>
                 <Text
                   variant="bodySmall"
-                  style={{ color: playerStyle.colors.secondary }}
+                  style={{ color: playerStyle.colors.onSurfaceVariant }}
                   numberOfLines={1}
                 >
                   {artist}
@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
   },
   songTitle: {
     flex: 4.9,
+    paddingRight: 5,
   },
   checkBox: {
     flex: 1,

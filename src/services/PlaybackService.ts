@@ -11,7 +11,6 @@ import { initBiliHeartbeat } from '../utils/Bilibili/BiliOperate';
 import { logger } from '../utils/Logger';
 import noxPlayingList, { getNextSong } from '../stores/playingList';
 import { NoxRepeatMode } from '../enums/RepeatMode';
-import playerSettingStore from '@stores/playerSettingStore';
 import appStore, { resetResolvedURL, setCrossfaded } from '@stores/appStore';
 import {
   fadePause,
@@ -29,9 +28,9 @@ const { APMWidgetModule } = NativeModules;
 const { getState } = noxPlayingList;
 const { setState } = appStore;
 const getAppStoreState = appStore.getState;
-const getPlayerSetting = playerSettingStore.getState;
-let lastBiliHeartBeat: string[] = ['', ''];
+const lastBiliHeartBeat: string[] = ['', ''];
 const lastPlayedDuration: { val?: number } = { val: 0 };
+let refetchThrottleGuard = 0;
 
 export async function additionalPlaybackService({
   noInterruption = false,
@@ -85,10 +84,43 @@ export async function additionalPlaybackService({
       }
       lastPlayedDuration.val = undefined;
     }
+    if (event.state === State.Error) {
+      const currTime = new Date().getTime();
+      const track = await TrackPlayer.getActiveTrack();
+      if (
+        currTime - track?.urlRefreshTimeStamp > 3600000 &&
+        track?.urlRefreshTimeStamp - refetchThrottleGuard > 10000
+      ) {
+        try {
+          const currentProgress = await TrackPlayer.getProgress();
+          logger.debug(`[ResolveURL] re-resolving track ${track?.title}`);
+          const song = track?.song as NoxMedia.Song;
+          const updatedMetadata = await resolveAndCache({ song });
+          const currentTrack = await TrackPlayer.getActiveTrack();
+          await TrackPlayer.load({
+            ...currentTrack,
+            ...updatedMetadata,
+            urlRefreshTimeStamp: currTime,
+          });
+          await TrackPlayer.seekTo(currentProgress.position);
+          TrackPlayer.play();
+          refetchThrottleGuard = currTime;
+        } catch (e) {
+          console.error('resolveURL failed', track, e);
+        }
+      }
+    }
   });
 }
 
 export async function PlaybackService() {
+  DeviceEventEmitter.addListener(
+    'APMVolume',
+    (e: { volume: number }) =>
+      e.volume === 0 &&
+      useNoxSetting.getState().playerSetting.pausePlaybackOnMute &&
+      TrackPlayer.pause(),
+  );
   DeviceEventEmitter.addListener('APMEnterPIP', (e: boolean) =>
     setState({ pipMode: e }),
   );
@@ -97,24 +129,20 @@ export async function PlaybackService() {
   );
 
   TrackPlayer.addEventListener(Event.RemotePause, () => {
-    console.log('Event.RemotePause');
     fadePause();
   });
 
   TrackPlayer.addEventListener(Event.RemotePlay, async () => {
-    console.log('Event.RemotePlay');
     TrackPlayer.play();
   });
 
   TrackPlayer.addEventListener(Event.RemoteSeek, event => {
-    console.log('Event.RemoteSeek', event);
     TrackPlayer.seekTo(event.position);
   });
 
   TrackPlayer.addEventListener(
     Event.PlaybackActiveTrackChanged,
     async event => {
-      console.log('Event.PlaybackActiveTrackChanged', event);
       APMWidgetModule?.updateWidget();
       const playerErrored =
         (await TrackPlayer.getPlaybackState()).state === State.Error;
@@ -130,7 +158,7 @@ export async function PlaybackService() {
         (await TrackPlayer.getActiveTrackIndex()) ===
         (await TrackPlayer.getQueue()).length - 1
       ) {
-        const playerSetting = getPlayerSetting().playerSetting;
+        const playerSetting = useNoxSetting.getState().playerSetting;
         const nextSong = getNextSong(event.track.song);
         if (nextSong) {
           logger.debug(`[ResolveURL] prefetching ${nextSong.name}`);
@@ -175,25 +203,8 @@ export async function PlaybackService() {
           bvid: event.track.song.bvid,
           cid: event.track.song.id,
         });
-        lastBiliHeartBeat = heartBeatReq;
-      }
-      // to resolve bilibili media stream URLs on the fly, TrackPlayer.load is used to
-      // replace the current track's url. its not documented? >:/
-      if (
-        event.index !== undefined &&
-        new Date().getTime() - event.track.urlRefreshTimeStamp > 3600000
-      ) {
-        try {
-          const song = event.track.song as NoxMedia.Song;
-          const updatedMetadata = await resolveAndCache({ song });
-          const currentTrack = await TrackPlayer.getActiveTrack();
-          await TrackPlayer.load({ ...currentTrack, ...updatedMetadata });
-          if (playerErrored) {
-            TrackPlayer.play();
-          }
-        } catch (e) {
-          console.error('resolveURL failed', event.track, e);
-        }
+        lastBiliHeartBeat[0] = heartBeatReq[0];
+        lastBiliHeartBeat[1] = heartBeatReq[1];
       }
       if (getState().playmode === NoxRepeatMode.RepeatTrack) {
         TrackPlayer.setRepeatMode(RepeatMode.Track);
@@ -201,13 +212,8 @@ export async function PlaybackService() {
     },
   );
 
-  TrackPlayer.addEventListener(Event.PlaybackPlayWhenReadyChanged, event => {
-    console.log('Event.PlaybackPlayWhenReadyChanged', event);
-  });
-
   if (isAndroid) {
     TrackPlayer.addEventListener(Event.RemoteCustomAction, async event => {
-      console.log('Event.RemoteCustomPlaymode', event);
       if (event.customAction !== 'customPlaymode') return;
       cycleThroughPlaymode();
     });

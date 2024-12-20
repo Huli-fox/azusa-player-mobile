@@ -5,15 +5,16 @@ import { useTranslation } from 'react-i18next';
 import GeneralSettings from './GeneralSettings';
 import AppearanceSettings from './appearances/View';
 import AListSettings from './alist/View';
-import DeveloperSettings from './DeveloperSettings';
+import DeveloperSettings from './developer/View';
 import SyncSettings from './SyncSettings';
 import { useNoxSetting } from '@stores/useApp';
-import { SettingListItem } from './useRenderSetting';
+import SettingListItem from './helpers/SettingListItem';
 import LanguageSettings from './LanguageSettings';
 import AboutSettings from './AboutSettings';
 import SplashSettings from './SplashSettings';
 import DownloadSettings from './DownloadSettings';
-import Bilibili from '../login/Bilibili';
+import LoginSettings from '../login/View';
+import PremiumSettings from '../billing/View';
 import { isAndroid, isIOS } from '@utils/RNUtils';
 
 enum NoxView {
@@ -27,6 +28,7 @@ enum NoxView {
   SPLASH_GALLARY = 'view-gallery',
   ALIST = 'google-cloud',
   DOWNLOAD = 'file-download',
+  PREMIUM = 'cash',
 
   DUMMY = 'Features not implemented',
   GENERAL = 'General',
@@ -34,7 +36,7 @@ enum NoxView {
 
 const Stack = createNativeStackNavigator();
 
-interface Props extends NoxComponent.NavigationProps {
+interface Props extends NoxComponent.StackNavigationProps {
   headerBackVisible?: boolean;
 }
 
@@ -92,6 +94,12 @@ const HomeSettings = ({ navigation }: Props) => {
           icon={NoxView.DEVELOPER}
           settingName="DeveloperOptions"
           onPress={() => navigation.navigate(NoxView.DEVELOPER)}
+          settingCategory="Settings"
+        />
+        <SettingListItem
+          icon={NoxView.PREMIUM}
+          settingName="PremiumSetting"
+          onPress={() => navigation.navigate(NoxView.PREMIUM)}
           settingCategory="Settings"
         />
         <SettingListItem
@@ -165,8 +173,13 @@ const Settings = ({ headerBackVisible = true }: Props) => {
       />
       <Stack.Screen
         name={NoxView.LOGIN}
-        component={Bilibili}
+        component={LoginSettings}
         options={{ title: t('appDrawer.LoginName') }}
+      />
+      <Stack.Screen
+        name={NoxView.PREMIUM}
+        component={PremiumSettings}
+        options={{ title: t('appDrawer.PremiumName') }}
       />
     </Stack.Navigator>
   );
